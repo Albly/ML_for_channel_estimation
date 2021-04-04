@@ -1,5 +1,6 @@
 
 import torch
+import numpy as np
 
 class Trainer():
     def __init__(self, net, cfg, optimizer, criterion):
@@ -35,7 +36,7 @@ class Trainer():
             loss_value = self.criterion(h_rec, h_data_noisy, data_noise_power, scen0) 
             #MSE_detector_loss(h_rec)
 
-            print('round = ',tr_round,', loss = ',loss_value)
+            if i%5 ==0: print('round = ',tr_round,', loss = ',np.round(loss_value.item(), 6))
 
             loss_value.backward(retain_graph=True)
             
