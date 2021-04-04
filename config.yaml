@@ -1,0 +1,18 @@
+
+DMRS_signal_path: DMRS_signal/
+file_path: DMRS_signal/temp_chan_seed1.mat
+
+
+# Layer params
+S1: 5.0 
+S2: 10.0
+
+#=============================
+#Net params
+layers: 4
+
+# Window params
+use_window: False 
+S3: -3.0
+S4: -10.0
+#=============================
