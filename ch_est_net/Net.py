@@ -35,24 +35,17 @@ class Net_Layer(torch.nn.Module):
     def forward(self, u_re, u_im, z_re, z_im, H_hat_re, H_hat_im):
         if self.isPass == False:
 
-            # R = H_hat + upsampling(scen0, h = z[:,0:n_subc,:].clone(), inverse = False)
             Z_re, Z_im = MM(z_re, z_im, self.IDFT_re , self.IDFT_im)
 
             R_re = H_hat_re + Z_re
             R_im = H_hat_im + Z_im
 
-            # r_mean = torch.sqrt(torch.mean((r[:,:,0].clone()**2 + r[:,:,1].clone()**2), dim = 0))
             R_mean = torch.sqrt(torch.mean((R_re**2 + R_im**2), dim = 0))
 
-            # h_hat_mean = sigmoid(r_mean, self.S1, self.S2)
             H_hat_mean = sigmoid(R_mean, self.S1, self.S2) 
-
-            #h_hat = r * h_hat_mean
 
             H_hat_re = R_re * H_hat_mean
             H_hat_im = R_im * H_hat_mean
-
-            #z = u - upsampling(scen0, h = h_hat.detach(), inverse = True)
 
             h_hat_re, h_hat_im = MM(H_hat_re, H_hat_im, self.DFT_re, self.DFT_im)
 
@@ -68,19 +61,7 @@ class Net(torch.nn.Module):
 
         self.network = nn.ModuleList([Net_Layer(cfg,48,512) for i in range(cfg.layers)])
 
-        # for layer in range(cfg.layers):
-        #     self.network.add_module(
-        #         'Net_Layer_' + str(layer),
-        #         #nn.Sequential(
-        #         Net_Layer(cfg,48,512)
-        #         #)
-        #     )
         print("Created Net with ", cfg.layers, "layers")
-
-        #self.net0 = Net_Layer(cfg,48,512)
-        #self.net1 = Net_Layer(cfg,48,512)
-        #self.net2 = Net_Layer(cfg,48,512)
-        #self.net3 = Net_Layer(cfg,48,512)
 
         self.DFT_re, self.DFT_im = DFT_matrixes(48,512)
 
@@ -100,30 +81,34 @@ class Net(torch.nn.Module):
         for layer in self.network:
             z_re, z_im, H_hat_re, H_hat_im = layer(u_re, u_im, z_re, z_im, H_hat_re, H_hat_im)
         
-        #z_re, z_im, H_hat_re, H_hat_im = self.net0(u_re, u_im, z_re, z_im, H_hat_re, H_hat_im)
-        #z_re, z_im, H_hat_re, H_hat_im = self.net1(u_re, u_im, z_re, z_im, H_hat_re, H_hat_im)
-        #z_re, z_im, H_hat_re, H_hat_im = self.net2(u_re, u_im, z_re, z_im, H_hat_re, H_hat_im)
-        #z_re, z_im, H_hat_re, H_hat_im = self.net3(u_re, u_im, z_re, z_im, H_hat_re, H_hat_im)
         
         h_hat_re, h_hat_im = MM(H_hat_re, H_hat_im, self.DFT_re, self.DFT_im) 
 
         out = torch.stack((h_hat_re, h_hat_im), dim = 2)
 
-        #out = cut_copies(h_hat)
-
         out = self.denormalize(out, maximum)
         return out
+
+
 
     def normalize(self, u):
         maximum = abs(u.max())
         u = 5*u/maximum
         return u, maximum
 
+
+
     def denormalize(self, u, maximum):
         u = u/5*maximum
         return u 
 
-    # def cut_copies(h_hat):
-    #     out = upsampling(scen0, h = h_hat, inverse = True)
-    #     return out
+ 
+    def setState(self, trainable_code, pass_code):
+
+        c = [bool(int(d)) for d in str(trainable_code)]
+        p = [bool(int(d)) for d in str(pass_code)]
+
+        for i, module in enumerate(self.network):
+            module.setTrainable(c[i])
+            module.isPass = p[i]
 
