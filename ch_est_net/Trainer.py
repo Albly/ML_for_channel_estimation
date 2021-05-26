@@ -21,6 +21,28 @@ class Trainer():
             self.train(tr_round = i, u = u, h_data_noisy= h_data_noisy, data_noise_power = data_noise_power, scen0= scen0, epochs = self.epochs)
 
 
+
+    def batch_train(self, u_batch , h_data_batch, noise_power_batch, scen0, epochs):
+        loss_history = []
+        for i in range(epochs):
+            batch_loss = torch.tensor([0.0], requires_grad = True)
+
+            for sample in range(u_batch.shape[0]):
+                h_rec = self.net.forward(u_batch[sample,:,:,:])
+                loss_value = self.criterion(h_rec, h_data_batch[sample,:,:,:,:], noise_power_batch[sample], scen0)
+                batch_loss = batch_loss + loss_value
+            
+            self.optimizer.zero_grad()
+            batch_loss.backward(retain_graph = True)
+            self.optimizer.step()
+
+            if i%1 ==0: print('epoch = ',i,', loss = ',np.round(batch_loss.item(), 6))
+            loss_history.append(batch_loss.item())
+
+        return loss_history
+
+
+
     def train(self, u , tr_round, h_data_noisy, data_noise_power, scen0, epochs):
         degrade_counter = 0
         flat_counter = 0
