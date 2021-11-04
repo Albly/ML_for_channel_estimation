@@ -20,7 +20,11 @@ class Trainer():
             self.net.setState(self.scenary[i], self.pass_scenary[i])
             self.train(tr_round = i, u = u, h_data_noisy= h_data_noisy, data_noise_power = data_noise_power, scen0= scen0, epochs = self.epochs)
 
-
+    def allow_all(self):
+        scenary = self.gen_scenary(self.cfg.layers)[-1]
+        pass_scenary = self.gen_pass_scenary(self.cfg.layers)[-1]
+        self.net.setState(scenary, pass_scenary)
+        
 
     def batch_train(self, u_batch , h_data_batch, noise_power_batch, scen0, epochs):
         loss_history = []

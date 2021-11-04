@@ -6,10 +6,11 @@ file_path: DMRS_signal/temp_chan_seed1.mat
 # Layer params
 S1: 5.0 
 S2: 10.0
-
+normalize: True
+activation: exponential
 #=============================
 #Net params
-layers: 4
+layers: 8
 epochs: 10000
 recived: 64 
 

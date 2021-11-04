@@ -1,5 +1,7 @@
+import scipy
 from scipy.linalg import dft
 import torch
+import math
 
 def DFT_matrixes(freq,time, return_IDFT = False):
     shape = max(freq,time)
@@ -14,6 +16,26 @@ def DFT_matrixes(freq,time, return_IDFT = False):
     if return_IDFT:
         return DFT_re[:time,:freq], DFT_im[:time,:freq], IDFT_re[:freq,:time], IDFT_im[:freq,:time]
     return DFT_re[:time,:freq], DFT_im[:time,:freq]
+
+def get_DFT(size, is_complex = True):
+    
+    
+    DFT = scipy.linalg.dft(size)/math.sqrt(size)
+    IDFT = DFT.conj()
+
+    DFT = torch.tensor(DFT, dtype= torch.cfloat)
+    IDFT = torch.tensor(IDFT, dtype= torch.cfloat)
+
+    if is_complex:
+        return DFT, IDFT
+    else:
+        DFT_re = torch.real(DFT)
+        DFT_im = torch.imag(DFT)
+        IDFT_re = torch.real(IDFT)
+        IDFT_im = torch.imag(IDFT)
+    
+    return DFT_re, DFT_im, IDFT_re, IDFT_im
+
 
 def MM(N_re, N_im, M_re, M_im):
     ''' 

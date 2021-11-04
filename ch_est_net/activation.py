@@ -1,4 +1,18 @@
 import torch
+import numpy as np
+
+class exponential():
+    def function(r,sigma, theta):
+        return theta[1]*r + theta[2]*r*torch.exp(-(r**2)/(2*theta[0]**2*sigma**2))
+    
+    def derivative(r, sigma,theta):
+
+        theta_sigma = theta[0]**2 * sigma**2 
+        exponent = torch.exp(-(r**2)/(2*theta_sigma))
+        mult = theta_sigma - r**2
+
+        return theta[2]*exponent*mult/theta_sigma + theta[1] 
+
 
 
 def sigmoid(r, S1, S2, recived):
