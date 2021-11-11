@@ -12,6 +12,8 @@ class Trainer():
 
         self.scenary = self.gen_scenary(cfg.layers)
         self.pass_scenary = self.gen_pass_scenary(cfg.layers)
+
+        self.loss_history = []
     
 
     def train_with_scenary(self, u, h_data_noisy, data_noise_power, scen0):
@@ -62,7 +64,9 @@ class Trainer():
             loss_value = self.criterion(h_rec, h_data_noisy, data_noise_power, scen0) 
             #MSE_detector_loss(h_rec)
 
-            if i%5 ==0: print('round = ',tr_round,', loss = ',np.round(loss_value.item(), 6))
+            if i%5 ==0: 
+                self.loss_history.append(loss_value)
+                print('round = ',tr_round,', loss = ',np.round(loss_value.item(), 6))
 
             loss_value.backward(retain_graph=True)
             
