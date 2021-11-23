@@ -22,6 +22,14 @@ class Trainer():
             self.net.setState(self.scenary[i], self.pass_scenary[i])
             self.train(tr_round = i, u = u, h_data_noisy= h_data_noisy, data_noise_power = data_noise_power, scen0= scen0, epochs = self.epochs)
 
+
+    def train_with_scenary_batch(self, u, h_data_noisy, data_noise_power, scen0):
+        for i in range(0, len(self.scenary)):
+            print('\n', 'Stage ', i)
+            self.net.setState(self.scenary[i], self.pass_scenary[i])
+            self.batch_train(self, u_batch= u, h_data_batch= h_data_noisy, noise_power_batch = data_noise_power, scen0= scen0, epochs = self.epochs)
+
+
     def allow_all(self):
         scenary = self.gen_scenary(self.cfg.layers)[-1]
         pass_scenary = self.gen_pass_scenary(self.cfg.layers)[-1]
@@ -30,6 +38,10 @@ class Trainer():
 
     def batch_train(self, u_batch , h_data_batch, noise_power_batch, scen0, epochs):
         loss_history = []
+        degrade_counter = 0
+        flat_counter = 0
+        prev_loss = 0 
+
         for i in range(epochs):
             batch_loss = torch.tensor([0.0], requires_grad = True)
 
@@ -41,6 +53,21 @@ class Trainer():
             self.optimizer.zero_grad()
             batch_loss.backward(retain_graph = True)
             self.optimizer.step()
+
+            if prev_loss < batch_loss: degrade_counter+=1 
+            elif torch.isclose(prev_loss, batch_loss, atol=1e-06): flat_counter+=1
+            else: 
+                degrade_counter-=1
+                flat_counter-=1
+
+            if degrade_counter > 3:
+                break
+            
+            if flat_counter > 4:
+                break
+            
+            prev_loss = loss_value
+            
 
             if i%1 ==0: print('epoch = ',i,', loss = ',np.round(batch_loss.item(), 6))
             loss_history.append(batch_loss.item())
@@ -55,21 +82,15 @@ class Trainer():
 
         prev_loss = 0
         for i in range(epochs):
-            # зануляем градиент
             self.optimizer.zero_grad()
-            
-            #прогоняем через сетку
             h_rec = self.net.forward(u)
-
             loss_value = self.criterion(h_rec, h_data_noisy, data_noise_power, scen0) 
-            #MSE_detector_loss(h_rec)
 
             if i%5 ==0: 
                 self.loss_history.append(loss_value)
                 print('round = ',tr_round,', loss = ',np.round(loss_value.item(), 6))
 
             loss_value.backward(retain_graph=True)
-            
             self.optimizer.step()
 
             if prev_loss < loss_value: degrade_counter+=1 
@@ -78,11 +99,9 @@ class Trainer():
                 degrade_counter-=1
                 flat_counter-=1
 
-
             #for p in lamp.parameters():
             #    p.data.clamp_(min = 0.00001, max = 500)
             
-
             if degrade_counter > 3:
                 break
             

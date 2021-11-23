@@ -10,8 +10,8 @@ normalize: True
 activation: exponential
 #=============================
 #Net params
-layers: 8
-epochs: 10000
+layers: 4
+epochs: 50
 recived: 64 
 
 # Window params
