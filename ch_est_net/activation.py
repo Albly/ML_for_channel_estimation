@@ -1,6 +1,18 @@
 import torch
 import numpy as np
 
+class complex_soft_threshold():
+    def function(r,lambd, type = 'soft'):
+        if type != 'soft': 
+            raise Exception('No {} type for threshold function'.format(type))          #TODO: add hard-threshold
+
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")       #TODO: add possibility of GPU
+
+        zero = torch.zeros(r.shape, device = "cpu")         # zero vector with same shape as input
+        sgn = torch.sgn(r)                  # sgn of vector. Equivalent to sign if v - real
+
+        return sgn*torch.maximum(torch.abs(r) - lambd , zero) 
+
 class exponential():
     def function(r,sigma, theta):
         return theta[1]*r + theta[2]*r*torch.exp(-(r**2)/(2*theta[0]**2*sigma**2))
