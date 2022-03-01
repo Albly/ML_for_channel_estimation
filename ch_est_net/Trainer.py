@@ -44,16 +44,27 @@ class Scenary_Trainer():
             self.model.eval()
             with torch.no_grad():
                 for cur_data_idx in range(clear_test.shape[0]):
+                    
+                    if epoch%5==0:
+                        if cur_data_idx == 0:
+                            self.model.is_save_log = True
+
                     x = clear_test[cur_data_idx,:].type(torch.complex64).detach()
                     y = noisy_test[cur_data_idx,:].type(torch.complex64).detach()
 
-                    test_mse += self.criterion(x,self.model(y))
+                    test_mse += self.criterion(x, self.model(y))
+                    self.model.is_save_log = False
+                    
+                    #if epoch%5==0:
+                        #if cur_data_idx == 0:
+                                
+                            #self.model.send_log_wandb(x,y)
 
             self.test_loss_history.append(test_mse.item())
             if epoch%5 == 0:
                 print('Epoch: {0}. Train Loss : {1:9.5f}. Test Loss: {2:9.5f}'.format(epoch,current_mse.item(), test_mse.item()))
 
-            if self.scheduler.optimizer.param_groups[0]['lr'] < 1e-5:
+            if self.scheduler.optimizer.param_groups[0]['lr'] < 1e-10:
                 break
             
             if test_mse.item() > previous_loss_value:
@@ -84,12 +95,12 @@ class Scenary_Trainer():
             self.scheduler = ReduceLROnPlateau(
                                         optimizer = self.optimizer,
                                         mode = 'min',
-                                        factor = 0.1,
+                                        factor = 0.05,
                                         patience = 10,
                                         threshold = 1e-3,
                                         threshold_mode = 'rel',
                                         cooldown = 10,
-                                        min_lr = 1e-6 
+                                        min_lr = 1e-12 
             )
 
             if i%2==1:

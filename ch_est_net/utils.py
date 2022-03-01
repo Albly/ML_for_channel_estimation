@@ -54,12 +54,15 @@ def complex_to_shape(X):
     assert len(X.shape) == 2
     return torch.stack((X.real, X.imag), dim = 2)
 
+def nothing(u): return u 
 
 def get_detector_error(method, is_complex, dtype, onePilotFolder,dataL, ml, 
             lossVersion='detector', # 'detector' or 'relError'
             inds = range(1,141), 
             SNR_L = range(-10,-1), 
             seed = 4, 
+            precoding = nothing,
+            aftercoding = nothing, 
             max_iter = 3, 
             ml_version = 12, 
             SNRscaleFactor = 1.,
@@ -67,12 +70,15 @@ def get_detector_error(method, is_complex, dtype, onePilotFolder,dataL, ml,
             scale = True):
     assert lossVersion in ['detector', 'relError']
 
+    
     N_used = scen.RB_num*scen.RB_size
     loss = []
     comb = scen.comb
 
     z = torch.zeros(64, 512, 2, requires_grad = False)
     h_hat = torch.zeros(64, 512, 2, requires_grad = False) 
+    j = 0
+
 
     losses = []
 
@@ -87,15 +93,48 @@ def get_detector_error(method, is_complex, dtype, onePilotFolder,dataL, ml,
                 h_data_noisy, data_noise_power = add_noise_data(h_data, SNR, dtype= dtype, seed = seed) 
 
                 u = h_pilot_noisy.mean(dim=2)
+                x = h_pilot.mean(dim = 2)
+
 
                 # if mehtod works with complex values - transfrom dims to complex numbers                
                 if is_complex:
-                    u = torch.tensor(u[:,:,0] + 1j*u[:,:,1], dtype = torch.complex64)
+                    u = (u[:,:,0] + 1j*u[:,:,1]).type(torch.complex64).detach()
+                    x = (x[:,:,0] + 1j*x[:,:,1]).type(torch.complex64).detach()
                 
                 # CHANNEL ESTIMATION
                 # working method 
-                h_pilot_rec = method(u)
+                u_pred = precoding(u)
 
+                M = torch.mean(u_pred)
+                V = torch.std(u_pred, unbiased= False )
+
+                u_pred -= M 
+                u_pred /=V
+
+                h_pilot_rec = method(u_pred)
+                h_pilot_rec = aftercoding(h_pilot_rec)
+
+                # plt.figure(figsize=(15,5))
+                # plt.subplot(1,3,1)  
+                # plt.imshow(abs(x))
+                # plt.title('Clear')
+                # plt.colorbar()
+
+                # plt.subplot(1,3,2)
+                # plt.imshow(abs(u))
+                # plt.title('Noisy')
+                # plt.colorbar()
+
+                # plt.subplot(1,3,3)
+                # plt.imshow(abs(h_pilot_rec.detach().numpy()))
+                # plt.title('Predicted')
+                # plt.colorbar()
+                # plt.show()
+                # j+=1
+
+                #if j>3:
+                #    return None
+                
                 # if methods works with complex numbers, transform the to dims 
                 if is_complex:
                     h_pilot_rec = complex_to_shape(h_pilot_rec)

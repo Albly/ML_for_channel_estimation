@@ -11,7 +11,7 @@ activation: exponential
 #=============================
 #Net params
 layers: 4
-epochs: 50
+epochs: 1000
 recived: 64 
 
 # Window params
