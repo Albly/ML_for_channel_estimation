@@ -1,4 +1,9 @@
 DMRS_signal/*
+results/*
+Notebooks/*
+data/*
+
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
